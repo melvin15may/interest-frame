@@ -16,7 +16,7 @@ def get_histogram(cv2_image):
         # 			image, you can pass [0],[1] or [2] to calculate histogram of
         # 			blue,green or red channel, respectively
         hist = cv2.calcHist([cv2_image], [channel], None, [256], [0, 256])
-        cv2.normalize(hist, hist, 0, 256, cv2.NORM_MINMAX)
+        #cv2.normalize(hist, hist, 0, 256, cv2.NORM_MINMAX)
         histogram.append(hist)
     return histogram
 
