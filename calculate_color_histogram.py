@@ -1,4 +1,3 @@
-import sys
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
@@ -36,8 +35,5 @@ def plot_histogram(data):
     plt.show()
 
 
-def compare_histogram(frame1=read_image(sys.argv[1]), frame2=read_image(sys.argv[2]), distance_type=cv2.HISTCMP_BHATTACHARYYA):
+def compare_histogram(frame1, frame2, distance_type=cv2.HISTCMP_BHATTACHARYYA):
     return cv2.compareHist(np.array(get_histogram(frame1)), np.array(get_histogram(frame2)), distance_type)
-
-
-#print compare_histogram()
