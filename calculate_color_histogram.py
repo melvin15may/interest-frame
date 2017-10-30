@@ -16,8 +16,9 @@ def get_histogram(cv2_image):
         # channel:  if input is grayscale image, its value is [0]. For color
         # 			image, you can pass [0],[1] or [2] to calculate histogram of
         # 			blue,green or red channel, respectively
-        histogram.append(cv2.calcHist(
-            [cv2_image], [channel], None, [256], [0, 256]))
+        hist = cv2.calcHist([cv2_image], [channel], None, [256], [0, 256])
+        cv2.normalize(hist, hist, 0, 256, cv2.NORM_MINMAX)
+        histogram.append(hist)
     return histogram
 
 
@@ -35,5 +36,8 @@ def plot_histogram(data):
     plt.show()
 
 
-def compare_histogram(frame1, frame2, distance_type=cv2.HISTCMP_BHATTACHARYYA):
+def compare_histogram(frame1=read_image(sys.argv[1]), frame2=read_image(sys.argv[2]), distance_type=cv2.HISTCMP_BHATTACHARYYA):
     return cv2.compareHist(np.array(get_histogram(frame1)), np.array(get_histogram(frame2)), distance_type)
+
+
+#print compare_histogram()
