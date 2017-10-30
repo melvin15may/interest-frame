@@ -1,7 +1,7 @@
 import sys
 import cv2
 from matplotlib import pyplot as plt
-
+import numpy as np
 
 """
 This code is a modification of code here: http://www.bogotobogo.com/python/OpenCV_Python/python_opencv3_image_histogram_calcHist.php
@@ -35,10 +35,5 @@ def plot_histogram(data):
     plt.show()
 
 
-def main():
-    img = read_image(sys.argv[1])
-    histogram = get_histogram(img)
-    plot_histogram(histogram)
-
-
-main()
+def compare_histogram(frame1, frame2, distance_type=cv2.HISTCMP_BHATTACHARYYA):
+    return cv2.compareHist(np.array(get_histogram(frame1)), np.array(get_histogram(frame2)), distance_type)
