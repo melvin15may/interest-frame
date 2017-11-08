@@ -8,6 +8,3 @@ def save_scenes(input_path, output_path='output.mkv', detector="content", thresh
     check_output(["scenedetect", "-i", input_path, "-d",
                   detector, "-t", str(threshold), "-o", output_path])
     return
-
-
-save_scenes('asd')
