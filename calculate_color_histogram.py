@@ -37,3 +37,7 @@ def plot_histogram(data):
 
 def compare_histogram(frame1, frame2, distance_type=cv2.HISTCMP_BHATTACHARYYA):
     return cv2.compareHist(np.array(get_histogram(frame1)), np.array(get_histogram(frame2)), distance_type)
+
+
+def compare_histogram_from_file(file_name1, file_name2, distance_type=cv2.HISTCMP_BHATTACHARYYA):
+    return cv2.compareHist(np.array(get_histogram(read_image(file_name1))), np.array(get_histogram(read_image(file_name2))), distance_type)
