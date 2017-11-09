@@ -66,30 +66,49 @@ def read_file(file_name):
 
 def main():
     scenes_data = scenes.get_frames(input_file_name=sys.argv[
-                                    1], threshold=28, output_file_name=None)
+                                    1], threshold=30, output_file_name=None)
     frames = read_file(file_name=sys.argv[1])
     interest_frames = divide_video(frames=frames, split_frames=scenes_data[
                                    'frames'], fps=scenes_data['fps'])
     json_output = []
-    for scene_frames in interest_frames:
-        print len(scene_frames)
-        for i in range(0, 10):
+
+    json_index = 1
+    frames_added = []
+
+    # threshold should be changed later
+    threshold = 0.3
+
+    for i in range(0, 10):
+        # print "threshold", (threshold / (i + 1))
+        for ind, scene_frames in enumerate(interest_frames):
             try:
-                json_output.append({
-                    "timeframe": scene_frames[i][1] / float(scenes_data['fps']),
-                    "rank": 10 - i
-                })
-                cv2.imwrite(
-                    "frame/fig{0:08d}.jpg".format(scene_frames[i][1]), frames[scene_frames[i][1]])
+                similar = False
+                for fa in frames_added:
+                    distance = cch.compare_histogram(
+                        frames[fa], frames[scene_frames[i][1]])
+                    if distance < (threshold / (i + 1)):
+                        similar = True
+                        break
+                if not similar:
+                    json_output.append({
+                        "t": scene_frames[i][1] / float(scenes_data['fps']),
+                        "r": 10 - i
+                    })
+                    frames_added.append(scene_frames[i][1])
+                    cv2.imwrite(
+                        "frame/fig{0:08d}.jpg".format(json_index), frames[scene_frames[i][1]])
+                    json_index += 1
+
             except IndexError:
                 pass
 
     with open('data.txt', 'w') as outfile:
         json.dump(json_output, outfile)
 
-    """
-    for filename in os.listdir(sys.argv[1]):
-        write_interest_frame(sys.argv[1] + filename, filename)
-    """
-
 main()
+
+
+def testing():
+    print cch.compare_histogram_from_file(sys.argv[1], sys.argv[2])
+
+testing()
