@@ -5,12 +5,14 @@ import cv2
 import os
 import json
 
+THRESHOLD = 0.3
 
 def write_interest_frame(start_frame, frames, output_file_name):
     frame_numbers = []
     frame_distances = []
     frame_count = start_frame
 
+    """
     for frame1 in frames:
         d = 0
         for frame2 in frames:
@@ -24,7 +26,16 @@ def write_interest_frame(start_frame, frames, output_file_name):
     # remove write func later
     # cv2.imwrite("frame/" + output_file_name + ".jpg", min_frame)
     # Format for sorted_frame_numbers => [(<distance>,<frame_number>)]
-    return sorted_frames_numbers  # , sorted_frame_distances
+    """
+
+    color_histogram = frames[0]
+
+    for frame_count in range(1,len(frames)):
+        key_frame,color_histogram = cch.is_key_frame(color_histogram, frames[frame_count], frame_count, THRESHOLD)
+        if key_frame:
+            frame_numbers.append(start_frame + frame_count)
+
+    return frames_numbers  # , sorted_frame_distances
 
 
 def divide_video(frames, split_frames, fps):
@@ -36,7 +47,7 @@ def divide_video(frames, split_frames, fps):
     json_output = []
 
     for f in split_frames:
-        print start_frame, f
+        print(start_frame, f)
         interest_frame = write_interest_frame(start_frame=start_frame, frames=frames[
                                               start_frame:f], output_file_name='test' + str(current_scene))
         """
@@ -45,7 +56,8 @@ def divide_video(frames, split_frames, fps):
             "rank": rank
         })
         """
-        interest_frames.append(interest_frame)
+        if interest_frames:
+            interest_frames.append(interest_frame)
         current_scene += 1
         start_frame = f
 
@@ -78,23 +90,23 @@ def main():
     # threshold should be changed later
     threshold = 0.3
 
-    for i in range(0, 10):
+    for i in range(0, 1):
         # print "threshold", (threshold / (i + 1))
         for ind, scene_frames in enumerate(interest_frames):
             try:
                 similar = False
                 for fa in frames_added:
                     distance = cch.compare_histogram(
-                        frames[fa], frames[scene_frames[i][1]])
+                        frames[fa], frames[scene_frames[i]])
                     if distance < (threshold / (i + 1)):
                         similar = True
                         break
                 if not similar:
                     json_output.append({
-                        "t": scene_frames[i][1] / float(scenes_data['fps']),
+                        "t": scene_frames[i] / float(scenes_data['fps']),
                         "r": 10 - i
                     })
-                    frames_added.append(scene_frames[i][1])
+                    frames_added.append(scene_frames[i])
                     cv2.imwrite(
                         "frame/fig{0:08d}.jpg".format(json_index), frames[scene_frames[i][1]])
                     json_index += 1
@@ -109,6 +121,6 @@ main()
 
 
 def testing():
-    print cch.compare_histogram_from_file(sys.argv[1], sys.argv[2])
+    print(cch.compare_histogram_from_file(sys.argv[1], sys.argv[2]))
 
-testing()
+#testing()
