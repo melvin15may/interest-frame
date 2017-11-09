@@ -22,17 +22,17 @@ class PySceneDetectArgs(object):
         self.stats_file = None
 
 
-# Save scenes from video
-def save(input_path, output_path="output.avi", output_directory_name="data", detector="content", threshold=30):
+# Get frames of different scenes from video
+def get_frames(input_file_name, output_file_name="output.avi", output_directory_name="data", detector="content", threshold=30):
 
     # Scenedetect Python endpoints are not stable
     scene_detectors = scenedetect.detectors.get_available()
 
     smgr_content = scenedetect.manager.SceneManager(
-        PySceneDetectArgs(input=input_path, type=detector, threshold=threshold), scene_detectors)
+        PySceneDetectArgs(input=input_file_name, type=detector, threshold=threshold), scene_detectors)
 
     video_fps, frames_read, frames_processed = scenedetect.detect_scenes_file(
-        path=input_path, scene_manager=smgr_content)
+        path=input_file_name, scene_manager=smgr_content)
 
     # Frames where next scene starts
     detected_frames = smgr_content.scene_list
@@ -41,16 +41,17 @@ def save(input_path, output_path="output.avi", output_directory_name="data", det
                        for x in detected_frames]
 
     # Write output
-    if output_path is not None and len(detected_frames) > 0:
+    if output_file_name is not None and len(detected_frames) > 0:
         create_directory(output_directory_name)
         timecode_list_str = ','.join(
             [scenedetect.timecodes.get_string(x) for x in scene_list_msec])
         scenedetect.split_input_video(
-            input_path, output_directory_name + "/" + output_path, timecode_list_str)
+            input_file_name, output_directory_name + "/" + output_file_name, timecode_list_str)
 
     return {
         "frames": detected_frames,
-        "start_times": scene_list_msec
+        "start_times": scene_list_msec,
+        "fps": video_fps
     }
 
 
