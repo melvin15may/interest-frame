@@ -5,7 +5,8 @@ import cv2
 import os
 import json
 
-THRESHOLD = 0.3
+THRESHOLD = 200000
+
 
 def write_interest_frame(start_frame, frames, output_file_name):
     frame_numbers = []
@@ -28,14 +29,18 @@ def write_interest_frame(start_frame, frames, output_file_name):
     # Format for sorted_frame_numbers => [(<distance>,<frame_number>)]
     """
 
-    color_histogram = frames[0]
-
-    for frame_count in range(1,len(frames)):
-        key_frame,color_histogram = cch.is_key_frame(color_histogram, frames[frame_count], frame_count, THRESHOLD)
+    color_histogram = cch.get_histogram(frames[0])
+    
+    last_key_frame = 0
+    for frame_count in range(1, len(frames)):
+        key_frame, color_histogram = cch.is_key_frame(
+            color_histogram, frames[frame_count], frame_count - last_key_frame, THRESHOLD)
         if key_frame:
+            cv2.imwrite("frame/" + output_file_name + ".jpg", frames[frame_count])
             frame_numbers.append(start_frame + frame_count)
+            last_key_frame = frame_count
 
-    return frames_numbers  # , sorted_frame_distances
+    return frame_numbers  # , sorted_frame_distances
 
 
 def divide_video(frames, split_frames, fps):
@@ -46,7 +51,7 @@ def divide_video(frames, split_frames, fps):
     interest_frames = []
     json_output = []
 
-    for f in split_frames:
+    for f in split_frames[:1]:
         print(start_frame, f)
         interest_frame = write_interest_frame(start_frame=start_frame, frames=frames[
                                               start_frame:f], output_file_name='test' + str(current_scene))
@@ -123,4 +128,4 @@ main()
 def testing():
     print(cch.compare_histogram_from_file(sys.argv[1], sys.argv[2]))
 
-#testing()
+# testing()
