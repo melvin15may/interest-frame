@@ -12,11 +12,11 @@ def get_histogram(cv2_image):
     histogram = []  # histogram in blue,green,red sequence
 
     # Equalize histogram
-    cv2_ycrcb = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2YCR_CB)  # or convert
-    channels = cv2.split(cv2_ycrcb)
-    cv2.equalizeHist(channels[0], channels[0])
-    cv2.merge(channels, cv2_ycrcb)
-    cv2_image = cv2.cvtColor(cv2_ycrcb, cv2.COLOR_YCR_CB2BGR)
+    cv2_image = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2HSV)  # or convert
+    #channels = cv2.split(cv2_ycrcb)
+    #cv2.equalizeHist(channels[0], channels[0])
+    #cv2.merge(channels, cv2_ycrcb)
+    #cv2_image = cv2.cvtColor(cv2_ycrcb, cv2.COLOR_YCR_CB2BGR)
 
     for channel in range(0, 3):
         # cv2.calcHist(images, channels, mask, histSize, ranges[, hist[, accumulate]])

@@ -5,6 +5,10 @@ import cv2
 import os
 import json
 
+# threshold should be changed later
+RANK_THRESHOLD = 0.33
+SCENE_THRESHOLD = 35
+
 
 def write_interest_frame(start_frame, frames, output_file_name):
     frame_numbers = []
@@ -66,7 +70,7 @@ def read_file(file_name):
 
 def main():
     scenes_data = scenes.get_frames(input_file_name=sys.argv[
-                                    1], threshold=30, output_file_name=None)
+                                    1], threshold=SCENE_THRESHOLD) #output_file_name="output.avi"
     frames = read_file(file_name=sys.argv[1])
     interest_frames = divide_video(frames=frames, split_frames=scenes_data[
                                    'frames'], fps=scenes_data['fps'])
@@ -75,30 +79,28 @@ def main():
     json_index = 1
     frames_added = []
 
-    # threshold should be changed later
-    threshold = 0.3
-
     for i in range(0, 10):
-        # print "threshold", (threshold / (i + 1))
+        print "threshold", (RANK_THRESHOLD / (i + 1))
         for ind, scene_frames in enumerate(interest_frames):
             try:
-                similar = False
-                for fa in frames_added:
-                    distance = cch.compare_histogram(
-                        frames[fa], frames[scene_frames[i][1]])
-                    if distance < (threshold / (i + 1)):
-                        similar = True
+                for j in range(0, i + 1):
+                    similar = False
+                    for fa in frames_added:
+                        distance = cch.compare_histogram(
+                            frames[fa], frames[scene_frames[j][1]])
+                        if distance < (RANK_THRESHOLD / (i + 1)):
+                            similar = True
+                            break
+                    if not similar:
+                        json_output.append({
+                            "t": scene_frames[j][1] / float(scenes_data['fps']),
+                            "r": 10 - i
+                        })
+                        frames_added.append(scene_frames[j][1])
+                        cv2.imwrite(
+                            "frame/fig{0:08d}.jpg".format(json_index), frames[scene_frames[j][1]])
+                        json_index += 1
                         break
-                if not similar:
-                    json_output.append({
-                        "t": scene_frames[i][1] / float(scenes_data['fps']),
-                        "r": 10 - i
-                    })
-                    frames_added.append(scene_frames[i][1])
-                    cv2.imwrite(
-                        "frame/fig{0:08d}.jpg".format(json_index), frames[scene_frames[i][1]])
-                    json_index += 1
-
             except IndexError:
                 pass
 
@@ -111,4 +113,4 @@ main()
 def testing():
     print cch.compare_histogram_from_file(sys.argv[1], sys.argv[2])
 
-testing()
+# testing()
