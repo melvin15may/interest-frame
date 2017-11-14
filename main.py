@@ -4,27 +4,39 @@ import sys
 import cv2
 import os
 import json
+import image_hash as has
+from collections import defaultdict
 
 # threshold should be changed later
 RANK_THRESHOLD = 0.33
 SCENE_THRESHOLD = 35
+BLUR_THRESHOLD = 100
 
 
 def write_interest_frame(start_frame, frames, output_file_name):
     frame_numbers = []
     frame_distances = []
     frame_count = start_frame
-
+    hash_code_count = defaultdict(int)
+    hash_code_frame = defaultdict(list)
+    hash_code_frame_blur = defaultdict(list)
     for frame1 in frames:
-        d = 0
-        for frame2 in frames:
-            d += cch.compare_histogram(frame1, frame2)
-        frame_numbers.append(frame_count)
-        frame_distances.append(d)
+        hash_code_count, hash_code = has.compare_images(frame=frame1, frames=hash_code_count)
+        blur_var = has.get_blur(frame=frame1)
+        if blur_var <= threshold:
+            continue
+        hash_code_frame_blur[hash_code].append(blur_var)
+        hash_code_frame[hash_code].append(frame_count)
         frame_count += 1
 
-    sorted_frames_numbers = sorted(zip(frame_distances, frame_numbers))
-    sorted_frames_distances = sorted(frame_distances)
+    # sort based on similar images
+    sorted_frames_numbers = []
+    for key in sorted(hash_code_count, key=hash_code_count.__getitem__):
+        sorted_frames_numbers += [x for _,
+                                  x in sorted(zip(hash_code_frame_blur[key], hash_code_frame[key]))]
+
+    # sorted_frames_numbers = sorted(zip(frame_distances, frame_numbers))
+    # sorted_frames_distances = sorted(frame_distances)
     # remove write func later
     # cv2.imwrite("frame/" + output_file_name + ".jpg", min_frame)
     # Format for sorted_frame_numbers => [(<distance>,<frame_number>)]
@@ -40,7 +52,7 @@ def divide_video(frames, split_frames, fps):
     json_output = []
 
     for f in split_frames:
-        print start_frame, f
+        print(start_frame, f)
         interest_frame = write_interest_frame(start_frame=start_frame, frames=frames[
                                               start_frame:f], output_file_name='test' + str(current_scene))
         """
@@ -70,7 +82,7 @@ def read_file(file_name):
 
 def main():
     scenes_data = scenes.get_frames(input_file_name=sys.argv[
-                                    1], threshold=SCENE_THRESHOLD) #output_file_name="output.avi"
+                                    1], threshold=SCENE_THRESHOLD)  # output_file_name="output.avi"
     frames = read_file(file_name=sys.argv[1])
     interest_frames = divide_video(frames=frames, split_frames=scenes_data[
                                    'frames'], fps=scenes_data['fps'])
@@ -78,7 +90,8 @@ def main():
 
     json_index = 1
     frames_added = []
-
+    print(interest_frames)
+    """
     for i in range(0, 10):
         print "threshold", (RANK_THRESHOLD / (i + 1))
         for ind, scene_frames in enumerate(interest_frames):
@@ -103,14 +116,14 @@ def main():
                         break
             except IndexError:
                 pass
-
+    
     with open('data.txt', 'w') as outfile:
         json.dump(json_output, outfile)
-
+    """
 main()
 
 
 def testing():
-    print cch.compare_histogram_from_file(sys.argv[1], sys.argv[2])
+    print(cch.compare_histogram_from_file(sys.argv[1], sys.argv[2]))
 
 # testing()
