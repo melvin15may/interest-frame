@@ -1,10 +1,10 @@
 from collections import defaultdict
 import imagehash
 import cv2
+from PIL import Image
 
-
-def compare_images(frame, frames=defaultdict(int), hashfunc=imagehash.phash):
-	hash_code = hashfunc(frame)
+def compare_images(frame, frames=defaultdict(int), hashfunc=imagehash.whash):
+	hash_code = hashfunc(Image.fromarray(frame))
 	frames[hash_code] += 1
 	return frames, hash_code
 
