@@ -57,5 +57,6 @@ def get_frames(input_file_name, output_file_name="output.avi", output_directory_
 
 # Store scenes is a directory
 def create_directory(name="data"):
-    check_output(["rm", "-rf", name])
-    check_output(["mkdir", name])
+    #check_output(["rm", "-rf", name])
+    #check_output(["mkdir", name])
+    return
