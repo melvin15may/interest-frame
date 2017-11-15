@@ -1,28 +1,27 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<title></title>
 	<head>
-		<link rel="stylesheet" href="https://cdn.plyr.io/2.0.18/plyr.css">
-		<script src="https://cdn.plyr.io/2.0.18/plyr.js"></script>
-    </head>
-</head>
-<body>
-	<!--
-	<audio id="narration">
-		<source src="../../data/Apple.wav">
-	</audio>
-	<video id="video" controls="controls">  
-		<source src="../../data/Apple.mp4">
-	</video>
-	-->
-	<video class="video">
-	  <source src="../../data/Apple.mp4" type="video/mp4">
-	  <source src="/path/to/video.webm" type="video/webm">
-	</video class="audio">
-	<audio class="audio">
-	  <source src="../../data/Apple.wav" type="audio/wav">
-	</audio>
-</body>
+		<title></title>
+		<head>
+			<link rel="stylesheet" href="https://cdn.plyr.io/2.0.18/plyr.css">
+			<script src="https://cdn.plyr.io/2.0.18/plyr.js"></script>
+	    </head>
+	</head>
+	<body>
+		<div class="player">
+			<video class="video">
+				<source src="../../data/Apple.mp4" type="video/mp4">
+			</video class="audio">
+			<audio class="audio">
+				<source src="../../data/Apple.wav" type="audio/wav">
+			</audio>
+		</div>
+	</body>
+	<style type="text/css">
+		.player {
+		  max-width: 352px;
+		  margin: 0 auto;
+		}
+	</style>
 	<script type="text/javascript" src="index.js"></script>
 </html>
