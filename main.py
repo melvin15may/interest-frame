@@ -6,26 +6,38 @@ import os
 import json
 
 
-def write_interest_frame(start_frame, frames, output_file_name):
-    frame_numbers = []
-    frame_distances = []
+def remove_similar_frame(start_frame, frames):
     frame_count = start_frame
-
+    sorted_frames_numbers = []
+    hash_code_count = defaultdict(int)
+    hash_code_frame = defaultdict(int)
+    hash_code_frame_blur = defaultdict(int)
     for frame1 in frames:
-        d = 0
-        for frame2 in frames:
-            d += cch.compare_histogram(frame1, frame2)
-        frame_numbers.append(frame_count)
-        frame_distances.append(d)
+        blur_var = has.get_blur(frame=frame1)
+        if blur_var <= BLUR_THRESHOLD:
+            continue
+        hash_code_count, hash_code = has.compare_images(
+            frame=frame1, frames=hash_code_count)
+
+        # Dont take repititions
+        if not hash_code in hash_code_frame:
+            sorted_frames_numbers.append(frame1)
+            if blur_var > hash_code_frame_blur[hash_code]:
+                hash_code_frame_blur[hash_code] = blur_var
+                hash_code_frame[hash_code] = frame_count
+
         frame_count += 1
 
-    sorted_frames_numbers = sorted(zip(frame_distances, frame_numbers))
-    sorted_frames_distances = sorted(frame_distances)
-    # remove write func later
-    # cv2.imwrite("frame/" + output_file_name + ".jpg", min_frame)
-    # Format for sorted_frame_numbers => [(<distance>,<frame_number>)]
-    return sorted_frames_numbers  # , sorted_frame_distances
+    # sort based on similar images
 
+    """
+    for key in sorted(hash_code_count, key=hash_code_count.__getitem__):
+        try:
+            sorted_frames_numbers += [frames[x - start_frame] for _, x in sorted(zip(hash_code_frame_blur[key], hash_code_frame[key]))]
+        except IndexError:
+            pass
+    """
+    return sorted_frames_numbers
 
 def divide_video(frames, split_frames, fps):
 
