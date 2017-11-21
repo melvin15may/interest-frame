@@ -22,15 +22,15 @@ def find_focus_rect(image_name, saliency_image_name):
     # cv2.imshow(image_name,im2)
     # cv2.waitKey(0)
     image = cv2.imread(image_name)
-    image_masked = cv2.bitwise_and(image, image, mask=im2)
-    cv2.imshow(image_name, image_masked)
-    cv2.waitKey(0)
+    #image_masked = cv2.bitwise_and(image, image, mask=im2)
+    #cv2.imshow(image_name, image)
+    #cv2.waitKey(0)
     """
     for i in contours:
         x, y, w, h = cv2.boundingRect(i)
         print x, y, w, h,
     """
-    return image
+    return image, im2
 
 
 def merge_images_col(img1, highest_y, img2, lowest_y):
@@ -46,14 +46,41 @@ def merge_images_col(img1, highest_y, img2, lowest_y):
 
 def main(data_file="data.txt", directory_name="predictions/"):
     data = {}
+    image_vertical = None
+    image_mask_vertical = None
+    image_horizontal = None
+    image_mask_horizontal = None
+    image_vertical_count = 1
     with open(data_file, 'r') as fp:
         data = json.load(fp)
     for ind, val in enumerate(data):
         if val['r'] == 10:
-            image_masked = find_focus_rect(image_name=os.path.join("frame/", "fig{0:08d}.jpg".format(
+            image, image_mask = find_focus_rect(image_name=os.path.join("frame/", "fig{0:08d}.jpg".format(
                 ind + 1)), saliency_image_name=os.path.join(directory_name, "fig{0:08d}.jpg".format(ind + 1)))
-    #cv2.imshow("combine", images)
-    # cv2.waitKey(0)
+            if image_vertical_count == 3:
+                if image_horizontal is None:
+                    image_horizontal = image_vertical
+                    image_mask_horizontal = image_mask_vertical
+                else:
+                    image_horizontal = np.concatenate((image_horizontal,image_vertical),axis=1)
+                    image_mask_horizontal = np.concatenate((image_mask_horizontal,image_mask_vertical),axis=1)
+                image_vertical = None
+                image_vertical_count = 1
+                #image_combine = image
+                #image_mask_combine = image_mask
+            else:
+                if image_vertical is None:
+                    image_vertical = image
+                    image_mask_vertical = image_mask
+                else:
+                    image_vertical = np.concatenate((image_vertical,image),axis=0)
+                    image_mask_vertical = np.concatenate((image_mask_vertical,image_mask),axis=0)
+                image_vertical_count+=1
+
+    #cv2.imshow("combine", image_combine)
+    #cv2.waitKey(0)
+    cv2.imwrite("combined_image.jpg",image_horizontal)
+    cv2.imwrite("combined_image_mask.jpg",image_mask_horizontal)
 
     """
     for filename in list(glob.glob(os.path.join(directory_name, '*.jpg'))):
