@@ -4,6 +4,7 @@ import os
 import numpy as np
 import cv2
 import json
+from seam_carving import SeamCarver
 
 
 # Run SAM on the frame folder
@@ -24,7 +25,7 @@ def find_focus_rect(image_name, saliency_image_name):
     image = cv2.imread(image_name)
     #image_masked = cv2.bitwise_and(image, image, mask=im2)
     #cv2.imshow(image_name, image)
-    #cv2.waitKey(0)
+    # cv2.waitKey(0)
     """
     for i in contours:
         x, y, w, h = cv2.boundingRect(i)
@@ -40,47 +41,58 @@ def merge_images_col(img1, highest_y, img2, lowest_y):
     output_img_width = max(img2_width, img1_width)
     output_img = np.zeros((output_img_height, output_img_width, img1_channels))
     output_img[0:output_img_height] = img1
-    
+
     return
 
 
 def main(data_file="data.txt", directory_name="predictions/"):
     data = {}
+    process_data = []
     image_vertical = None
     image_mask_vertical = None
     image_horizontal = None
     image_mask_horizontal = None
     image_vertical_count = 1
+    column = 0
+    row = 0
     with open(data_file, 'r') as fp:
         data = json.load(fp)
     for ind, val in enumerate(data):
         if val['r'] == 10:
-            image, image_mask = find_focus_rect(image_name=os.path.join("frame/", "fig{0:08d}.jpg".format(
-                ind + 1)), saliency_image_name=os.path.join(directory_name, "fig{0:08d}.jpg".format(ind + 1)))
-            if image_vertical_count == 3:
-                if image_horizontal is None:
-                    image_horizontal = image_vertical
-                    image_mask_horizontal = image_mask_vertical
-                else:
-                    image_horizontal = np.concatenate((image_horizontal,image_vertical),axis=1)
-                    image_mask_horizontal = np.concatenate((image_mask_horizontal,image_mask_vertical),axis=1)
-                image_vertical = None
-                image_vertical_count = 1
-                #image_combine = image
-                #image_mask_combine = image_mask
-            else:
-                if image_vertical is None:
-                    image_vertical = image
-                    image_mask_vertical = image_mask
-                else:
-                    image_vertical = np.concatenate((image_vertical,image),axis=0)
-                    image_mask_vertical = np.concatenate((image_mask_vertical,image_mask),axis=0)
-                image_vertical_count+=1
-
+        	process_data.append(val)
+        	image, image_mask = find_focus_rect(image_name=os.path.join("frame/", "fig{0:08d}.jpg".format(ind + 1)), saliency_image_name=os.path.join(directory_name, "fig{0:08d}.jpg".format(ind + 1)))
+        	if image_vertical_count == 3:
+        		if image_horizontal is None:
+        			image_horizontal = image_vertical
+        			image_mask_horizontal = image_mask_vertical
+        		else:
+        			image_horizontal = np.concatenate((image_horizontal, image_vertical), axis=1)
+        			image_mask_horizontal = np.concatenate((image_mask_horizontal, image_mask_vertical), axis=1)
+        		image_vertical = None
+        		image_vertical_count = 1
+        		# add range
+        		data[ind]['col'] = [column, column + 352]
+        		data[ind]['row'] = [row, row + 288]
+        		column += 352
+        		#image_combine = image
+        		#image_mask_combine = image_mask
+        	else:
+        		if image_vertical is None:
+        			image_vertical = image
+        			image_mask_vertical = image_mask
+        		else:
+        			image_vertical = np.concatenate((image_vertical, image), axis=0)
+        			image_mask_vertical = np.concatenate((image_mask_vertical, image_mask), axis=0)
+        		image_vertical_count += 1
+        		data[ind]['col'] = [column, column + 352]
+        		data[ind]['row'] = [row, row + 288]
+        		row += 352
     #cv2.imshow("combine", image_combine)
-    #cv2.waitKey(0)
-    cv2.imwrite("combined_image.jpg",image_horizontal)
-    cv2.imwrite("combined_image_mask.jpg",image_mask_horizontal)
+    # cv2.waitKey(0)
+    cv2.imwrite("combined_image.jpg", image_horizontal)
+    cv2.imwrite("combined_image_mask.jpg", image_mask_horizontal)
+    print(data)
+    image_resize_with_mask("combined_image.jpg", "combined_image_new.jpg",500, 300, "combined_image_mask.jpg", process_data)
 
     """
     for filename in list(glob.glob(os.path.join(directory_name, '*.jpg'))):
@@ -88,4 +100,10 @@ def main(data_file="data.txt", directory_name="predictions/"):
     """
 
 
+def image_resize_with_mask(filename_input, filename_output, new_height, new_width, filename_mask, data):
+    obj = SeamCarver(filename_input, new_height, new_width, protect_mask=filename_mask, data=data)
+    obj.save_result(filename_output)
+
+
+# hello()
 main()
