@@ -2,15 +2,20 @@ import numpy as np
 import cv2
 
 
+def save_numpy_array(frame_map_file, ar):
+
+    np.savetxt(frame_map_file, ar, delimiter=",")
+
+
 class SeamCarver:
 
-    def __init__(self, filename, out_height, out_width, protect_mask='', object_mask='', data={}):
+    def __init__(self, filename, out_height, out_width, protect_mask='', object_mask='', frame_map=None, frame_map_file=None):
         # initialize parameter
         self.filename = filename
         self.out_height = out_height
         self.out_width = out_width
 
-        self.json_data = data
+        self.frame_map = frame_map
 
         # read in image and store as np.float64 format
         self.in_image = cv2.imread(filename).astype(np.float64)
@@ -34,18 +39,20 @@ class SeamCarver:
                 self.mask = cv2.imread(protect_mask, 0).astype(np.float64)
 
         # kernel for forward energy map calculation
-        self.kernel_x = np.array([[0., 0., 0.], [-1., 0., 1.], [0., 0., 0.]], dtype=np.float64)
+        self.kernel_x = np.array(
+            [[0., 0., 0.], [-1., 0., 1.], [0., 0., 0.]], dtype=np.float64)
         self.kernel_y_left = np.array(
             [[0., 0., 0.], [0., 0., 1.], [0., -1., 0.]], dtype=np.float64)
         self.kernel_y_right = np.array(
             [[0., 0., 0.], [1., 0., 0.], [0., -1., 0.]], dtype=np.float64)
 
         # constant for covered area by protect mask or object mask
-        self.constant = 1000
-        self.removal_type="col"
+        self.constant = 10000
+        self.removal_type = "col"
         # starting program
         self.start()
-        print(self.json_data)
+        save_numpy_array(frame_map_file, self.frame_map)
+        # print(self.json_data)
 
     def start(self):
         """
@@ -78,7 +85,6 @@ class SeamCarver:
 
         # remove column
         if delta_col < 0:
-            self.removal_type = "col"
             self.seams_removal(delta_col * -1)
         # insert column
         elif delta_col > 0:
@@ -86,13 +92,14 @@ class SeamCarver:
 
         # remove row
         if delta_row < 0:
-            self.removal_type = "row"
             self.out_image = self.rotate_image(self.out_image, 1)
-            
+            self.frame_map = self.rotate_image(self.frame_map, 1)
+
             if self.protect:
                 self.mask = self.rotate_mask(self.mask, 1)
             self.seams_removal(delta_row * -1)
             self.out_image = self.rotate_image(self.out_image, 0)
+            self.frame_map = self.rotate_image(self.frame_map, 0)
         # insert row
         elif delta_row > 0:
             self.out_image = self.rotate_image(self.out_image, 1)
@@ -147,13 +154,17 @@ class SeamCarver:
                 seam_idx = self.find_seam(cumulative_map)
                 self.delete_seam(seam_idx)
 
-    def update_json_data(self, value):
+    def update_json_data(self, col, row):
+        # print col,row
         for i, val in enumerate(self.json_data):
-            if value >= val[self.removal_type][0] and value < val[self.removal_type][1]:
-                val[self.removal_type][1] -= 1
+            if col >= val["row-wise"][row][0] and col < val["row-wise"][row][1]:
+                val["row-wise"][row][1] -= 1
+                """
                 for val_next in self.json_data[i + 1:]:
-                    val_next[self.removal_type][0] -= 1
-                    val_next[self.removal_type][1] -= 1
+                    val_next["row-wise"][row][1] -= 1
+                    val_next["row-wise"][row][0] -= 1
+                """
+                break
 
     def seams_insertion(self, num_pixel):
         if self.protect:
@@ -198,9 +209,12 @@ class SeamCarver:
 
     def calc_energy_map(self):
         b, g, r = cv2.split(self.out_image)
-        b_energy = np.absolute(cv2.Scharr(b, -1, 1, 0)) + np.absolute(cv2.Scharr(b, -1, 0, 1))
-        g_energy = np.absolute(cv2.Scharr(g, -1, 1, 0)) + np.absolute(cv2.Scharr(g, -1, 0, 1))
-        r_energy = np.absolute(cv2.Scharr(r, -1, 1, 0)) + np.absolute(cv2.Scharr(r, -1, 0, 1))
+        b_energy = np.absolute(cv2.Scharr(b, -1, 1, 0)) + \
+            np.absolute(cv2.Scharr(b, -1, 0, 1))
+        g_energy = np.absolute(cv2.Scharr(g, -1, 1, 0)) + \
+            np.absolute(cv2.Scharr(g, -1, 0, 1))
+        r_energy = np.absolute(cv2.Scharr(r, -1, 1, 0)) + \
+            np.absolute(cv2.Scharr(r, -1, 0, 1))
         return b_energy + g_energy + r_energy
 
     def cumulative_map_backward(self, energy_map):
@@ -226,7 +240,8 @@ class SeamCarver:
                     e_right = output[row - 1, col + 1] + matrix_x[row -
                                                                   1, col + 1] + matrix_y_right[row - 1, col + 1]
                     e_up = output[row - 1, col] + matrix_x[row - 1, col]
-                    output[row, col] = energy_map[row, col] + min(e_right, e_up)
+                    output[row, col] = energy_map[
+                        row, col] + min(e_right, e_up)
                 elif col == n - 1:
                     e_left = output[row - 1, col - 1] + matrix_x[row -
                                                                  1, col - 1] + matrix_y_left[row - 1, col - 1]
@@ -238,7 +253,8 @@ class SeamCarver:
                     e_right = output[row - 1, col + 1] + matrix_x[row -
                                                                   1, col + 1] + matrix_y_right[row - 1, col + 1]
                     e_up = output[row - 1, col] + matrix_x[row - 1, col]
-                    output[row, col] = energy_map[row, col] + min(e_left, e_right, e_up)
+                    output[row, col] = energy_map[
+                        row, col] + min(e_left, e_right, e_up)
         return output
 
     def calc_neighbor_matrix(self, kernel):
@@ -264,13 +280,17 @@ class SeamCarver:
     def delete_seam(self, seam_idx):
         m, n = self.out_image.shape[: 2]
         output = np.zeros((m, n - 1, 3))
+        frame_map_output = np.zeros((m, n - 1), dtype=int)
         for row in range(m):
             col = seam_idx[row]
-            self.update_json_data(col,row)
+            #self.update_json_data(col, row)
             output[row, :, 0] = np.delete(self.out_image[row, :, 0], [col])
             output[row, :, 1] = np.delete(self.out_image[row, :, 1], [col])
             output[row, :, 2] = np.delete(self.out_image[row, :, 2], [col])
+            frame_map_output[row, :] = np.delete(self.frame_map[row, :], [col])
+        print frame_map_output.shape, self.frame_map.shape
         self.out_image = np.copy(output)
+        self.frame_map = np.copy(frame_map_output)
 
     def add_seam(self, seam_idx):
         m, n = self.out_image.shape[: 2]

@@ -63,6 +63,9 @@ def divide_video(frames, split_frames, fps):
 
     return interest_frames
 
+def write_file(file_name, image):
+    cv2.imwrite(file_name, image)
+
 
 def read_file(file_name):
     frames = []
@@ -117,10 +120,10 @@ def main():
     with open('data.txt', 'w') as outfile:
         json.dump(json_output, outfile)
 
-main()
+#main()
 
 
 def testing():
     print cch.compare_histogram_from_file(sys.argv[1], sys.argv[2])
 
-testing()
+#testing()
