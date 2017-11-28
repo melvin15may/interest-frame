@@ -20,6 +20,9 @@ def run_sam(sam_directory, directory_name="frame_key/"):
     check_output(["python", os.path.join(sam_directory, "main.py"), "test", directory_name])
 
 
+def crop_image(image):
+	return image[42:40+205,:]
+
 def remove_black_bars(image):
     delete_index = []
     count = 0
@@ -56,7 +59,7 @@ def find_focus_rect(image_name, saliency_image_name):
     return image, im2
 
 
-def create_tapestery(data, frame_directory_name="interest_frame/", saliency_directory_name="predictions/", width_reduction=0.6, height_reduction=0.6):
+def create_tapestery(data, frame_directory_name="interest_frame/", saliency_directory_name="predictions/", width_reduction=0.6, height_reduction=0.85):
 
     ranked_frames = [[], [], [], []]
     for key in data:
@@ -135,7 +138,7 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
 
         print("Image resizing for rank", ind)
         image_resize_with_mask("combined_image_{}.jpg".format(ind), "combined_image_new_{}.jpg".format(ind), int(image_horizontal.shape[
-            0] * width_reduction), int(image_horizontal.shape[1] * height_reduction), "combined_image_mask_{}.jpg".format(ind), frame_map_horizontal, "frame_map_{}.csv".format(ind))
+            0] * height_reduction), int(image_horizontal.shape[1] * width_reduction), "combined_image_mask_{}.jpg".format(ind), frame_map_horizontal, "frame_map_{}.csv".format(ind))
 
 
 def pretty_print(ar):
@@ -161,7 +164,7 @@ def blend():
     parser.add_argument('video', help=".rgb video file", type=str)
     parser.add_argument('json', help="JSON key frame file", type=str)
     parser.add_argument('width_reduction',
-                        help="Width reduction factor (Default: 0.6)", nargs='?', type=float, default=0.6)
+                        help="Width reduction factor (Default: 0.85)", nargs='?', type=float, default=0.6)
     parser.add_argument('height_reduction',
                         help="Height reduction factor (Default: 0.6)", nargs='?', type=float, default=0.6)
     parser.add_argument('-l', dest="load_frames",
@@ -192,23 +195,24 @@ def blend():
             rgb = colorcoded.swapaxes(0, 2).swapaxes(0, 1)
             img = Image.fromarray(rgb)
             img.save(os.path.join(directory_name, "fig{0:08d}.jpg".format(t)))
-
     # Save frames
     if args.extract_frames:
         print("Removing TOP and BOTTOM black bars")
         for i in data:
-            #image = remove_black_bars(cv2.imread(os.path.join(directory_name, i)))
-            image = cv2.imread(os.path.join(directory_name, i))
+            image = crop_image(cv2.imread(os.path.join(directory_name, i)))
+            #cv2.imshow(i,image)
+            #cv2.waitKey(0)
+            #image = cv2.imread(os.path.join(directory_name, i))
             write_file(os.path.join(args.key_frames_directory, i), image)
 
     if args.sam:
     	print("Running SAM")
     	run_sam(args.sam_directory, args.key_frames_directory)
     	print("Saving Saliency to predictions/")
-
+    
     print("Create tapestery")
     create_tapestery(data, frame_directory_name=args.key_frames_directory,
                      width_reduction=args.width_reduction, height_reduction=args.height_reduction)
-
+	
 
 blend()
