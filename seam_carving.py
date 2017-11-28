@@ -4,7 +4,7 @@ import cv2
 
 def save_numpy_array(frame_map_file, ar):
 
-    np.savetxt(frame_map_file, ar, delimiter=",")
+    np.savetxt(frame_map_file, ar, delimiter=",", fmt="%4d")
 
 
 class SeamCarver:
@@ -93,13 +93,13 @@ class SeamCarver:
         # remove row
         if delta_row < 0:
             self.out_image = self.rotate_image(self.out_image, 1)
-            self.frame_map = self.rotate_image(self.frame_map, 1)
+            self.frame_map = self.rotate_frame_map(self.frame_map, 1)
 
             if self.protect:
                 self.mask = self.rotate_mask(self.mask, 1)
             self.seams_removal(delta_row * -1)
             self.out_image = self.rotate_image(self.out_image, 0)
-            self.frame_map = self.rotate_image(self.frame_map, 0)
+            self.frame_map = self.rotate_frame_map(self.frame_map, 0)
         # insert row
         elif delta_row > 0:
             self.out_image = self.rotate_image(self.out_image, 1)
@@ -329,6 +329,18 @@ class SeamCarver:
             for c in range(ch):
                 for row in range(m):
                     output[:, m - 1 - row, c] = image[row, :, c]
+        return output
+
+    def rotate_frame_map(self, frame_map, ccw):
+        m, n = frame_map.shape
+        output = np.zeros((n, m))
+        if ccw:
+            image_flip = np.fliplr(frame_map)
+            for row in range(m):
+                output[:, row] = image_flip[row, :]
+        else:
+            for row in range(m):
+                output[:, m - 1 - row] = frame_map[row, :]
         return output
 
     def rotate_mask(self, mask, ccw):

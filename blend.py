@@ -16,8 +16,8 @@ def write_file(file_name, image):
 
 
 # Run SAM on the frame folder
-def run_sam(directory_name="interest_frame/"):
-    check_output(["python", "sam/main.py", "test", directory_name])
+def run_sam(sam_directory, directory_name="frame_key/"):
+    check_output(["python", os.path.join(sam_directory, "main.py"), "test", directory_name])
 
 
 def remove_black_bars(image):
@@ -56,7 +56,7 @@ def find_focus_rect(image_name, saliency_image_name):
     return image, im2
 
 
-def create_tapestery(data, frame_directory_name="interest_frame/", saliency_directory_name="predictions/"):
+def create_tapestery(data, frame_directory_name="interest_frame/", saliency_directory_name="predictions/", width_reduction=0.6, height_reduction=0.6):
 
     ranked_frames = [[], [], [], []]
     for key in data:
@@ -135,7 +135,7 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
 
         print("Image resizing for rank", ind)
         image_resize_with_mask("combined_image_{}.jpg".format(ind), "combined_image_new_{}.jpg".format(ind), int(image_horizontal.shape[
-            0] * 0.7), int(image_horizontal.shape[1] * 1.8 / 3), "combined_image_mask_{}.jpg".format(ind), frame_map_horizontal, "frame_map_{}.csv".format(ind))
+            0] * width_reduction), int(image_horizontal.shape[1] * height_reduction), "combined_image_mask_{}.jpg".format(ind), frame_map_horizontal, "frame_map_{}.csv".format(ind))
 
 
 def pretty_print(ar):
@@ -160,12 +160,18 @@ def blend():
     parser = argparse.ArgumentParser(description='Create tapestry')
     parser.add_argument('video', help=".rgb video file", type=str)
     parser.add_argument('json', help="JSON key frame file", type=str)
-    parser.add_argument('-l', dest="load_frames", help="Load frames from .rgb video (Default: False)", action='store_true', default=False)
-    #parser.add_argument('-s', dest="load_frames", help="Load frames from .rgb video", action='store_true', const=True)
+    parser.add_argument('width_reduction',
+                        help="Width reduction factor (Default: 0.6)", nargs='?', type=float, default=0.6)
+    parser.add_argument('height_reduction',
+                        help="Height reduction factor (Default: 0.6)", nargs='?', type=float, default=0.6)
+    parser.add_argument('-l', dest="load_frames",
+                        help="Load frames from .rgb video (Default: False)", action='store_true', default=False)
+    parser.add_argument('-e', dest="extract_frames",help="Extract key frames from .rgb frames (Default: False)", action='store_true', default=False)
+    parser.add_argument('-s', dest="sam",help="Execute SAM (Default: False)", action='store_true', default=False)
     parser.add_argument(
-        'frames_directory', help="Directory to save frames from .rgb video file (Default: frame)", default="frame",  nargs='?', type=str)
-    parser.add_argument('key_frames_directory', help="Directory to save key frames from .rgb video file (Default: frame_key)",
-                        nargs='?', default="frame_key", type=str)
+        'frames_directory', help="Directory to save frames from .rgb video file (Default: frame)", default="frame/",  nargs='?', type=str)
+    parser.add_argument('key_frames_directory', help="Directory to save key frames from .rgb video file (Default: frame_key)",nargs='?', default="frame_key/", type=str)
+    parser.add_argument('sam_directory', help="Directory to SAM (Default: ../sam)",nargs='?', default=os.path.join("..","sam"), type=str)
     args = parser.parse_args()
 
     data_file = args.json  # JSON data file
@@ -180,24 +186,29 @@ def blend():
     timecoded = raw.reshape(-1, frame_dimension)
 
     if args.load_frames:
-    	print("Extracting frames from file")
-    	for t in tqdm(range(0, timecoded.shape[0])):
-    		colorcoded = timecoded[t].reshape(3,288,352)
-    		rgb = colorcoded.swapaxes(0,2).swapaxes(0,1)
-    		img = Image.fromarray(rgb)
-    		img.save(os.path.join(directory_name, "fig{0:08d}.jpg".format(t)))
+        print("Extracting frames from file")
+        for t in tqdm(range(0, timecoded.shape[0])):
+            colorcoded = timecoded[t].reshape(3, 288, 352)
+            rgb = colorcoded.swapaxes(0, 2).swapaxes(0, 1)
+            img = Image.fromarray(rgb)
+            img.save(os.path.join(directory_name, "fig{0:08d}.jpg".format(t)))
 
     # Save frames
-    print("Removing TOP and BOTTOM black bars")
-    for i in data:
-        image = remove_black_bars(cv2.imread(os.path.join(directory_name, i)))
-        write_file(os.path.join(args.key_frames_directory, i), image)
+    if args.extract_frames:
+        print("Removing TOP and BOTTOM black bars")
+        for i in data:
+            #image = remove_black_bars(cv2.imread(os.path.join(directory_name, i)))
+            image = cv2.imread(os.path.join(directory_name, i))
+            write_file(os.path.join(args.key_frames_directory, i), image)
 
-    print("Running SAM")
-    # run_sam(directory_name)
+    if args.sam:
+    	print("Running SAM")
+    	run_sam(args.sam_directory, args.key_frames_directory)
+    	print("Saving Saliency to predictions/")
 
     print("Create tapestery")
-    create_tapestery(data, frame_directory_name=args.key_frames_directory)
+    create_tapestery(data, frame_directory_name=args.key_frames_directory,
+                     width_reduction=args.width_reduction, height_reduction=args.height_reduction)
 
 
 blend()

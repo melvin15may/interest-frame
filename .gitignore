@@ -106,8 +106,10 @@ frame/fig*.jpg
 frame_key/fig*.jpg
 interest_frame/fig*.jpg
 predictions/fig*.jpg
+weights/sam-resnet_salicon_weights.pkl
 frame.zip
 combined_image*
 *.avi
 *.rgb
 *.wav
+*.csv
