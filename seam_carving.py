@@ -288,7 +288,7 @@ class SeamCarver:
             output[row, :, 1] = np.delete(self.out_image[row, :, 1], [col])
             output[row, :, 2] = np.delete(self.out_image[row, :, 2], [col])
             frame_map_output[row, :] = np.delete(self.frame_map[row, :], [col])
-        print frame_map_output.shape, self.frame_map.shape
+        #print(frame_map_output.shape, self.frame_map.shape)
         self.out_image = np.copy(output)
         self.frame_map = np.copy(frame_map_output)
 

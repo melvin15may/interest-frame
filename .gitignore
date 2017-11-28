@@ -102,9 +102,12 @@ ENV/
 
 # Data
 data/
-frame/*.jpg
-frame_key/*.jpg
-interest_frame/*.jpg
-predictons/*.jpg
+frame/fig*.jpg
+frame_key/fig*.jpg
+interest_frame/fig*.jpg
+predictions/fig*.jpg
 frame.zip
 combined_image*
+*.avi
+*.rgb
+*.wav

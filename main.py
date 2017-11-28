@@ -48,7 +48,7 @@ def divide_video(frames, split_frames, fps):
     json_output = []
 
     for f in split_frames:
-        print start_frame, f
+        #   print start_frame, f
         interest_frame = write_interest_frame(start_frame=start_frame, frames=frames[
                                               start_frame:f], output_file_name='test' + str(current_scene))
         """
@@ -63,8 +63,6 @@ def divide_video(frames, split_frames, fps):
 
     return interest_frames
 
-def write_file(file_name, image):
-    cv2.imwrite(file_name, image)
 
 
 def read_file(file_name):
@@ -123,7 +121,7 @@ def main():
 #main()
 
 
-def testing():
-    print cch.compare_histogram_from_file(sys.argv[1], sys.argv[2])
+#def testing():
+#    print cch.compare_histogram_from_file(sys.argv[1], sys.argv[2])
 
 #testing()
