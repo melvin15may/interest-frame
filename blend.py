@@ -99,6 +99,20 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
             """
             buffer_map = np.empty((image.shape[0], image.shape[1]), dtype=int)
             buffer_map[:] = int(key[7:11])
+            
+            if image_vertical is None:
+                image_vertical = image
+                image_mask_vertical = image_mask
+                frame_map_vertical = buffer_map
+            else:
+                image_vertical = np.concatenate(
+                    (image_vertical, image), axis=0)
+                image_mask_vertical = np.concatenate(
+                    (image_mask_vertical, image_mask), axis=0)
+                frame_map_vertical = np.concatenate(
+                    (frame_map_vertical, buffer_map), axis=0)
+            image_vertical_count += 1
+
             if image_vertical_count == 3:
                 if image_horizontal is None:
                     image_horizontal = image_vertical
@@ -111,23 +125,10 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
                         (image_mask_horizontal, image_mask_vertical), axis=1)
                     frame_map_horizontal = np.concatenate(
                         (frame_map_horizontal, frame_map_vertical), axis=1)
-                image_vertical = image
-                image_mask_vertical = image_mask
-                frame_map_vertical = buffer_map
-                image_vertical_count = 2
-            else:
-                if image_vertical is None:
-                    image_vertical = image
-                    image_mask_vertical = image_mask
-                    frame_map_vertical = buffer_map
-                else:
-                    image_vertical = np.concatenate(
-                        (image_vertical, image), axis=0)
-                    image_mask_vertical = np.concatenate(
-                        (image_mask_vertical, image_mask), axis=0)
-                    frame_map_vertical = np.concatenate(
-                        (frame_map_vertical, buffer_map), axis=0)
-                image_vertical_count += 1
+                image_vertical = None
+                image_mask_vertical = None
+                frame_map_vertical = None
+                image_vertical_count = 1
             # row += 352
 
         # cv2.imshow("combine", image_vertical)
@@ -161,20 +162,20 @@ def image_resize_with_mask(filename_input, filename_output, new_height, new_widt
 def blend():
 
     parser = argparse.ArgumentParser(description='Create tapestry')
-    parser.add_argument('video', help=".rgb video file", type=str)
-    parser.add_argument('json', help="JSON key frame file", type=str)
-    parser.add_argument('width_reduction',
-                        help="Width reduction factor (Default: 0.85)", nargs='?', type=float, default=0.6)
-    parser.add_argument('height_reduction',
-                        help="Height reduction factor (Default: 0.6)", nargs='?', type=float, default=0.6)
     parser.add_argument('-l', dest="load_frames",
                         help="Load frames from .rgb video (Default: False)", action='store_true', default=False)
     parser.add_argument('-e', dest="extract_frames",help="Extract key frames from .rgb frames (Default: False)", action='store_true', default=False)
     parser.add_argument('-s', dest="sam",help="Execute SAM (Default: False)", action='store_true', default=False)
+    parser.add_argument('--video',dest='video', help=".rgb video file", type=str)
+    parser.add_argument('--json',dest='json', help="JSON key frame file", type=str)
+    parser.add_argument('--width_reduction',dest='width_reduction',
+                        help="Width reduction factor (Default: 0.6)", nargs='?', type=float, default=0.6)
+    parser.add_argument('--height_reduction',dest='height_reduction',
+                        help="Height reduction factor (Default: 0.85)", nargs='?', type=float, default=0.8)
     parser.add_argument(
-        'frames_directory', help="Directory to save frames from .rgb video file (Default: frame)", default="frame/",  nargs='?', type=str)
-    parser.add_argument('key_frames_directory', help="Directory to save key frames from .rgb video file (Default: frame_key)",nargs='?', default="frame_key/", type=str)
-    parser.add_argument('sam_directory', help="Directory to SAM (Default: ../sam)",nargs='?', default=os.path.join("..","sam"), type=str)
+        '--frames_directory', dest='frames_directory', help="Directory to save frames from .rgb video file (Default: frame)", default="frame/",  nargs='?', type=str)
+    parser.add_argument('--key_frames_directory',dest='key_frames_directory', help="Directory to save key frames from .rgb video file (Default: frame_key)",nargs='?', default="frame_key/", type=str)
+    parser.add_argument('--sam_directory',dest='sam_directory', help="Directory to SAM (Default: ../sam)",nargs='?', default=os.path.join("..","sam"), type=str)
     args = parser.parse_args()
 
     data_file = args.json  # JSON data file
