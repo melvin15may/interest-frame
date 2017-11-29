@@ -81,9 +81,9 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
         frame_map_horizontal = None
         frame_map_vertical = None
         for key in frames:
-            #image, image_mask = find_focus_rect(image_name=os.path.join(
-            #    frame_directory_name, key), saliency_image_name=os.path.join(saliency_directory_name, key))
-            image, image_mask = test.get_sal(image_name=os.path.join(frame_directory_name, key))
+            image, image_mask = find_focus_rect(image_name=os.path.join(
+                frame_directory_name, key), saliency_image_name=os.path.join(saliency_directory_name, key))
+            #image, image_mask = test.get_sal(image_name=os.path.join(frame_directory_name, key))
             """
             if image_horizontal is not None:
                 image_horizontal = np.concatenate(
@@ -136,13 +136,13 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
 
         # cv2.imshow("combine", image_vertical)
         # cv2.waitKey(0)
-        cv2.imwrite("combined_image_test{}.jpg".format(ind), image_horizontal)
-        cv2.imwrite("combined_image_mask_test{}.jpg".format(
+        cv2.imwrite("combined_image_{}.jpg".format(ind), image_horizontal)
+        cv2.imwrite("combined_image_mask_{}.jpg".format(
             ind), image_mask_horizontal)
 
         print("Image resizing for rank", ind)
-        #image_resize_with_mask("combined_image_{}.jpg".format(ind), "combined_image_new_{}.jpg".format(ind), int(image_horizontal.shape[
-        #    0] * height_reduction), int(image_horizontal.shape[1] * width_reduction), "combined_image_mask_{}.jpg".format(ind), frame_map_horizontal, "frame_map_{}.csv".format(ind))
+        image_resize_with_mask("combined_image_{}.jpg".format(ind), "combined_image_new_{}.jpg".format(ind), int(image_horizontal.shape[
+            0] * height_reduction), int(image_horizontal.shape[1] * width_reduction), "combined_image_mask_{}.jpg".format(ind), frame_map_horizontal, "frame_map_{}.csv".format(ind))
 
 
 def pretty_print(ar):

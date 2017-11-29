@@ -4,7 +4,7 @@ import cv2
 #image_name = "frame_key/fig00004825.jpg"
 def get_sal(image_name):
 	image_org = cv2.imread(image_name)
-	image=image_org
+	image=np.copy(image_org)
 	cv2.pyrMeanShiftFiltering(image, 2, 10, image, 4)
 
 	def backproject(source, target, levels = 2, scale = 1):
