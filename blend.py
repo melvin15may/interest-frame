@@ -9,7 +9,7 @@ import sys
 from PIL import Image
 from tqdm import tqdm
 import argparse
-import test
+import pyramid
 
 def write_file(file_name, image):
     cv2.imwrite(file_name, image)
@@ -22,7 +22,7 @@ def run_sam(sam_directory, directory_name="frame_key/"):
 
 
 def crop_image(image):
-    return image[42:40 + 205, :]
+    return image[42:40 + 206, :]
 
 
 def remove_black_bars(image):
@@ -108,8 +108,8 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
                 image_mask_vertical = image_mask
                 frame_map_vertical = buffer_map
             else:
-                image_vertical = np.concatenate(
-                    (image_vertical, image), axis=0)
+                #image_vertical = np.concatenate((image_vertical, image), axis=0)
+                image_vertical = pyramid.pyramid_blend(image_vertical, image, axis=0)
                 image_mask_vertical = np.concatenate(
                     (image_mask_vertical, image_mask), axis=0)
                 frame_map_vertical = np.concatenate(
@@ -122,8 +122,8 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
                     image_mask_horizontal = image_mask_vertical
                     frame_map_horizontal = frame_map_vertical
                 else:
-                    image_horizontal = np.concatenate(
-                        (image_horizontal, image_vertical), axis=1)
+                    #image_horizontal = np.concatenate((image_horizontal, image_vertical), axis=1)
+                    image_horizontal = pyramid.pyramid_blend(image_horizontal, image_vertical, axis=1)
                     image_mask_horizontal = np.concatenate(
                         (image_mask_horizontal, image_mask_vertical), axis=1)
                     frame_map_horizontal = np.concatenate(
@@ -136,13 +136,13 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
 
         # cv2.imshow("combine", image_vertical)
         # cv2.waitKey(0)
-        cv2.imwrite("combined_image_{}.jpg".format(ind), image_horizontal)
-        cv2.imwrite("combined_image_mask_{}.jpg".format(
+        cv2.imwrite("combined_image_p_{}.jpg".format(ind), image_horizontal)
+        cv2.imwrite("combined_image_mask_p_{}.jpg".format(
             ind), image_mask_horizontal)
 
         print("Image resizing for rank", ind)
-        image_resize_with_mask("combined_image_{}.jpg".format(ind), "combined_image_new_{}.jpg".format(ind), int(image_horizontal.shape[
-            0] * height_reduction), int(image_horizontal.shape[1] * width_reduction), "combined_image_mask_{}.jpg".format(ind), frame_map_horizontal, "frame_map_{}.csv".format(ind))
+        #image_resize_with_mask("combined_image_p_{}.jpg".format(ind), "combined_image_new_p_{}.jpg".format(ind), int(image_horizontal.shape[
+        #    0] * height_reduction), int(image_horizontal.shape[1] * width_reduction), "combined_image_mask_p_{}.jpg".format(ind), frame_map_horizontal, "frame_map_{}.csv".format(ind))
 
 
 def pretty_print(ar):
