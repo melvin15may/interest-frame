@@ -11,6 +11,7 @@ from tqdm import tqdm
 import argparse
 import test
 
+
 def write_file(file_name, image):
     cv2.imwrite(file_name, image)
 
@@ -61,7 +62,7 @@ def find_focus_rect(image_name, saliency_image_name):
     return image, im2
 
 
-def create_tapestery(data, frame_directory_name="interest_frame/", saliency_directory_name="predictions/", width_reduction=0.6, height_reduction=0.85):
+def create_tapestery(data, frame_directory_name="interest_frame/", saliency_directory_name="predictions/", width_reduction=0.6, height_reduction=0.85, ranks=[0, 1, 2, 3]):
 
     ranked_frames = [[], [], [], []]
     for key in data:
@@ -72,77 +73,79 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
         ranked_frames[j] += ranked_frames[j - 1]
         ranked_frames[j] = sorted(ranked_frames[j])
     for ind, frames in enumerate(ranked_frames):
-        print("Tapestry for RANK", ind)
-        image_vertical = None
-        image_mask_vertical = None
-        image_horizontal = None
-        image_mask_horizontal = None
-        image_vertical_count = 1
-        frame_map_horizontal = None
-        frame_map_vertical = None
-        for key in frames:
-            image, image_mask = find_focus_rect(image_name=os.path.join(
-                frame_directory_name, key), saliency_image_name=os.path.join(saliency_directory_name, key))
-            #image, image_mask = test.get_sal(image_name=os.path.join(frame_directory_name, key))
-            """
-            if image_horizontal is not None:
-                image_horizontal = np.concatenate(
-                    (image_horizontal, image), axis=1)
-                image_mask_horizontal = np.concatenate(
-                    (image_mask_horizontal, image_mask), axis=1)
-                buffer_map = np.empty((image.shape[0], image.shape[1]), dtype=int)
-                buffer_map[:] = ind
-                frame_map = np.concatenate((frame_map, buffer_map), axis=1)
-            else:
-                image_horizontal = image
-                image_mask_horizontal = image_mask
-                frame_map = np.empty(
-                    (image.shape[0], image.shape[1]), dtype=int)
-                frame_map[:] = ind
-            """
-            buffer_map = np.empty((image.shape[0], image.shape[1]), dtype=int)
-            buffer_map[:] = int(key[7:11])
-
-            if image_vertical is None:
-                image_vertical = image
-                image_mask_vertical = image_mask
-                frame_map_vertical = buffer_map
-            else:
-                image_vertical = np.concatenate(
-                    (image_vertical, image), axis=0)
-                image_mask_vertical = np.concatenate(
-                    (image_mask_vertical, image_mask), axis=0)
-                frame_map_vertical = np.concatenate(
-                    (frame_map_vertical, buffer_map), axis=0)
-            image_vertical_count += 1
-
-            if image_vertical_count == 3:
-                if image_horizontal is None:
-                    image_horizontal = image_vertical
-                    image_mask_horizontal = image_mask_vertical
-                    frame_map_horizontal = frame_map_vertical
-                else:
+        if ind in ranks:
+            print("Tapestry for RANK", ind)
+            image_vertical = None
+            image_mask_vertical = None
+            image_horizontal = None
+            image_mask_horizontal = None
+            image_vertical_count = 1
+            frame_map_horizontal = None
+            frame_map_vertical = None
+            for key in frames:
+                image, image_mask = find_focus_rect(image_name=os.path.join(
+                    frame_directory_name, key), saliency_image_name=os.path.join(saliency_directory_name, key))
+                #image, image_mask = test.get_sal(image_name=os.path.join(frame_directory_name, key))
+                """
+                if image_horizontal is not None:
                     image_horizontal = np.concatenate(
-                        (image_horizontal, image_vertical), axis=1)
+                        (image_horizontal, image), axis=1)
                     image_mask_horizontal = np.concatenate(
-                        (image_mask_horizontal, image_mask_vertical), axis=1)
-                    frame_map_horizontal = np.concatenate(
-                        (frame_map_horizontal, frame_map_vertical), axis=1)
-                image_vertical = None
-                image_mask_vertical = None
-                frame_map_vertical = None
-                image_vertical_count = 1
-            # row += 352
+                        (image_mask_horizontal, image_mask), axis=1)
+                    buffer_map = np.empty((image.shape[0], image.shape[1]), dtype=int)
+                    buffer_map[:] = ind
+                    frame_map = np.concatenate((frame_map, buffer_map), axis=1)
+                else:
+                    image_horizontal = image
+                    image_mask_horizontal = image_mask
+                    frame_map = np.empty(
+                        (image.shape[0], image.shape[1]), dtype=int)
+                    frame_map[:] = ind
+                """
+                buffer_map = np.empty(
+                    (image.shape[0], image.shape[1]), dtype=int)
+                buffer_map[:] = int(key[7:11])
 
-        # cv2.imshow("combine", image_vertical)
-        # cv2.waitKey(0)
-        cv2.imwrite("combined_image_{}.jpg".format(ind), image_horizontal)
-        cv2.imwrite("combined_image_mask_{}.jpg".format(
-            ind), image_mask_horizontal)
+                if image_vertical is None:
+                    image_vertical = image
+                    image_mask_vertical = image_mask
+                    frame_map_vertical = buffer_map
+                else:
+                    image_vertical = np.concatenate(
+                        (image_vertical, image), axis=0)
+                    image_mask_vertical = np.concatenate(
+                        (image_mask_vertical, image_mask), axis=0)
+                    frame_map_vertical = np.concatenate(
+                        (frame_map_vertical, buffer_map), axis=0)
+                image_vertical_count += 1
 
-        print("Image resizing for rank", ind)
-        image_resize_with_mask("combined_image_{}.jpg".format(ind), "combined_image_new_{}.jpg".format(ind), int(image_horizontal.shape[
-            0] * height_reduction), int(image_horizontal.shape[1] * width_reduction), "combined_image_mask_{}.jpg".format(ind), frame_map_horizontal, "frame_map_{}.csv".format(ind))
+                if image_vertical_count == 3:
+                    if image_horizontal is None:
+                        image_horizontal = image_vertical
+                        image_mask_horizontal = image_mask_vertical
+                        frame_map_horizontal = frame_map_vertical
+                    else:
+                        image_horizontal = np.concatenate(
+                            (image_horizontal, image_vertical), axis=1)
+                        image_mask_horizontal = np.concatenate(
+                            (image_mask_horizontal, image_mask_vertical), axis=1)
+                        frame_map_horizontal = np.concatenate(
+                            (frame_map_horizontal, frame_map_vertical), axis=1)
+                    image_vertical = None
+                    image_mask_vertical = None
+                    frame_map_vertical = None
+                    image_vertical_count = 1
+                # row += 352
+
+            # cv2.imshow("combine", image_vertical)
+            # cv2.waitKey(0)
+            cv2.imwrite("combined_image_{}.jpg".format(ind), image_horizontal)
+            cv2.imwrite("combined_image_mask_{}.jpg".format(
+                ind), image_mask_horizontal)
+
+            print("Image resizing for rank", ind)
+            image_resize_with_mask("combined_image_{}.jpg".format(ind), "combined_image_new_{}.jpg".format(ind), int(image_horizontal.shape[
+                0] * height_reduction), int(image_horizontal.shape[1] * width_reduction), "combined_image_mask_{}.jpg".format(ind), frame_map_horizontal, "frame_map_{}.csv".format(ind))
 
 
 def pretty_print(ar):
@@ -173,6 +176,8 @@ def blend():
                         action='store_true', default=False)
     parser.add_argument('--video', dest='video',
                         help=".rgb video file", type=str)
+    parser.add_argument('--ranks', dest='ranks',
+                        help="Compute teapestry for ranks (Default: 0 1 2 3)", type=str, default="0;1;2;3")
     parser.add_argument('--json', dest='json',
                         help="JSON key frame file", type=str)
     parser.add_argument('--width_reduction', dest='width_reduction',
@@ -221,8 +226,8 @@ def blend():
         print("Saving Saliency to predictions/")
 
     print("Create tapestery")
-    create_tapestery(data, frame_directory_name=args.key_frames_directory,
-                     width_reduction=args.width_reduction, height_reduction=args.height_reduction)
+    create_tapestery(data, frame_directory_name=args.key_frames_directory, width_reduction=args.width_reduction,
+                     height_reduction=args.height_reduction, ranks=map(int, args.ranks.split(';')))
 
 
 blend()
