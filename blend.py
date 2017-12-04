@@ -10,6 +10,7 @@ from PIL import Image
 from tqdm import tqdm
 import argparse
 import test
+#from datetime import datetime
 
 
 def write_file(file_name, image):
@@ -74,7 +75,7 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
         ranked_frames[j] = sorted(ranked_frames[j])
     for ind, frames in enumerate(ranked_frames):
         if ind in ranks:
-            print("Tapestry for RANK", ind)
+            print("Tapestry for RANK", ind)#, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             image_vertical = None
             image_mask_vertical = None
             image_horizontal = None
@@ -143,9 +144,10 @@ def create_tapestery(data, frame_directory_name="interest_frame/", saliency_dire
             cv2.imwrite("combined_image_mask_{}.jpg".format(
                 ind), image_mask_horizontal)
 
-            print("Image resizing for rank", ind)
+            print("Image resizing for rank", ind)#, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             image_resize_with_mask("combined_image_{}.jpg".format(ind), "combined_image_new_{}.jpg".format(ind), int(image_horizontal.shape[
                 0] * height_reduction), int(image_horizontal.shape[1] * width_reduction), "combined_image_mask_{}.jpg".format(ind), frame_map_horizontal, "frame_map_{}.csv".format(ind))
+            print("Image resizing done for rank", ind)#, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 
 def pretty_print(ar):
@@ -177,7 +179,7 @@ def blend():
     parser.add_argument('--video', dest='video',
                         help=".rgb video file", type=str)
     parser.add_argument('--ranks', dest='ranks',
-                        help="Compute teapestry for ranks (Default: 0 1 2 3)", type=str, default="0;1;2;3")
+                        help="Compute teapestry for ranks (Default: 0,1,2,3)", type=str, default="0,1,2,3")
     parser.add_argument('--json', dest='json',
                         help="JSON key frame file", type=str)
     parser.add_argument('--width_reduction', dest='width_reduction',
@@ -227,7 +229,7 @@ def blend():
 
     print("Create tapestery")
     create_tapestery(data, frame_directory_name=args.key_frames_directory, width_reduction=args.width_reduction,
-                     height_reduction=args.height_reduction, ranks=map(int, args.ranks.split(';')))
+                     height_reduction=args.height_reduction, ranks=map(int, args.ranks.split(',')))
 
 
 blend()
